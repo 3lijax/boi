@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tradingpool Pro - Quantitative Deriv Analytics</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand-section">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div class="brand-text">
+                    <h1 data-i18n="app_title">Tradingpool Pro</h1>
+                    <p data-i18n="app_subtitle">Quantitative Volatility & Real-Time Digit Analytics</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <!-- Feed Source Switcher & Indicator -->
+                <button class="sound-toggle-btn active" id="feed-toggle-btn" title="Toggle between Live Deriv WebSocket and Synthetic Engine">
+                    <i class="fa-solid fa-tower-broadcast"></i> <span id="feed-source-label">Live WebSocket</span>
+                </button>
+
+                <!-- Deriv App ID Config Button -->
+                <button class="sound-toggle-btn" id="feed-config-btn" title="Configure Deriv App ID / Credentials">
+                    <i class="fa-solid fa-gear"></i> <span data-i18n="app_id_btn">App ID</span>
+                </button>
+                
+                <!-- Theme Selector -->
+                <div class="header-select-wrapper" title="Change Visual Theme">
+                    <i class="fa-solid fa-palette select-icon"></i>
+                    <select id="theme-select" class="header-select" aria-label="Visual Theme">
+                        <option value="midnight">🌙 Midnight Pro</option>
+                        <option value="emerald">🌲 Matrix Emerald</option>
+                        <option value="crimson">🌸 Obsidian Tokyo</option>
+                        <option value="light">☀️ Solar Light</option>
+                    </select>
+                </div>
+
+                <!-- Language Selector -->
+                <div class="header-select-wrapper" title="Change Language">
+                    <i class="fa-solid fa-globe select-icon"></i>
+                    <select id="lang-select" class="header-select" aria-label="Language">
+                        <option value="en">🇺🇸 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="pt">🇧🇷 Português</option>
+                        <option value="id">🇮🇩 Indonesia</option>
+                        <option value="ru">🇷🇺 Русский</option>
+                        <option value="ar">🇸🇦 العربية</option>
+                    </select>
+                </div>
+
+                <!-- Audio Alert Toggle -->
+                <button class="sound-toggle-btn active" id="sound-btn" title="Toggle Audio Signals">
+                    <i class="fa-solid fa-volume-high"></i> <span data-i18n="alerts_btn">Alerts</span>
+                </button>
+
+                <!-- Multi-Asset Screener Toggle -->
+                <button class="sound-toggle-btn" id="open-screener-btn" title="Toggle Multi-Asset Screener">
+                    <i class="fa-solid fa-table-columns"></i> <span data-i18n="screener_btn">Screener</span>
+                </button>
+
+                <!-- Backtester Modal Trigger -->
+                <button class="sound-toggle-btn" id="open-backtest-btn" title="Open Quantitative Backtester">
+                    <i class="fa-solid fa-flask-vial"></i> <span data-i18n="backtest_btn">Backtest</span>
+                </button>
+
+                <!-- Presets & Vault Trigger -->
+                <button class="sound-toggle-btn" id="open-vault-btn" title="Bot Presets & Session Vault">
+                    <i class="fa-solid fa-box-archive"></i> <span data-i18n="vault_btn">Vault</span>
+                </button>
+
+                <!-- Export CSV -->
+                <button class="sound-toggle-btn" id="export-btn" title="Export Recorded Ticks to CSV">
+                    <i class="fa-solid fa-file-csv"></i> <span data-i18n="export_btn">Export</span>
+                </button>
+
+                <!-- Portal Navigation -->
+                <a href="index.html" class="btn-action btn-secondary" style="text-decoration:none; font-size:0.85rem; padding: 7px 14px;">
+                    <i class="fa-solid fa-arrow-left"></i> <span data-i18n="portal_btn">Portal</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Chronological Tick Tape / Ribbon -->
+        <section class="card tape-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">
+                    <i class="fa-solid fa-tape"></i> <span data-i18n="ticker_ribbon">Live Ticker Ribbon (Last 20 Digits)</span>
+                </span>
+                <span id="streak-indicator" style="font-size:0.78rem; font-weight:600; color:var(--primary-light);" aria-live="polite">
+                    Parity Streak: None
+                </span>
+            </div>
+            <div class="tick-tape-wrapper" id="tick-tape">
+                <!-- Injected via app.js -->
+            </div>
+        </section>
+
+        <!-- Multi-Asset Market Screener Card (Feature 1) -->
+        <section class="card screener-card" id="screener-section">
+            <div class="screener-header">
+                <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">
+                    <i class="fa-solid fa-chart-line"></i> <span data-i18n="screener_title">Multi-Market Live Screener</span>
+                    <span style="font-size:0.7rem; font-weight:400; color:var(--text-dim); margin-left:8px;">(Click any asset to switch active chart)</span>
+                </span>
+                <span style="font-size:0.75rem; color:var(--text-dim);" id="screener-status">
+                    Tracking 5 Volatility Indices
+                </span>
+            </div>
+            <div class="screener-grid" id="screener-grid">
+                <!-- Dynamically populated via app.js -->
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <div class="workspace-grid">
+
+            <!-- Sidebar Controls Column -->
+            <aside class="sidebar-column">
+
+                <!-- Control Buttons -->
+                <div class="control-row">
+                    <button class="btn-action btn-start" id="start-btn">
+                        <i class="fa-solid fa-play"></i> <span data-i18n="start_analysis">Start Analysis</span>
+                    </button>
+                    <button class="btn-action btn-stop" id="stop-btn">
+                        <i class="fa-solid fa-pause"></i> <span data-i18n="pause_analysis">Pause</span>
+                    </button>
+                </div>
+
+                <!-- Parameters Card -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-sliders"></i> <span data-i18n="feed_params">Feed Parameters</span>
+                        </div>
+                    </div>
+
+                    <!-- Asset Selector -->
+                    <div class="form-group">
+                        <label for="asset-select" data-i18n="volatility_asset">Volatility Asset</label>
+                        <select id="asset-select" class="custom-select">
+                            <!-- Populated dynamically via JS -->
+                        </select>
+                    </div>
+
+                    <!-- Strategy Selector -->
+                    <div class="form-group">
+                        <label for="strategy-select" data-i18n="stat_strategy">Statistical Strategy</label>
+                        <select id="strategy-select" class="custom-select">
+                            <option value="even_odd" selected>Even / Odd (Parity Distribution)</option>
+                            <option value="over_under">Over / Under (Barrier Analysis)</option>
+                            <option value="matches">Matches / Cluster Outlier</option>
+                            <option value="rise_fall">Rise / Fall (Rolling Trend)</option>
+                            <option value="up_down">Up / Down (Instant Momentum)</option>
+                        </select>
+                    </div>
+
+                    <!-- Barrier for Over/Under -->
+                    <div class="form-group" id="target-digit-group" style="display: none;">
+                        <label for="target-digit-select" data-i18n="barrier_digit">Barrier Digit (0 - 9)</label>
+                        <select id="target-digit-select" class="custom-select">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5" selected>5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                            <option value="8">8</option>
+                            <option value="9">9</option>
+                        </select>
+                    </div>
+
+                    <!-- Live Feed Monitor -->
+                    <div class="form-group">
+                        <label data-i18n="live_terminal_digit">Live Terminal Digit</label>
+                        <div class="live-monitor-box">
+                            <div class="status-indicator">
+                                <span class="status-dot disconnected" id="connection-dot"></span>
+                                <span id="connection-text">Connecting...</span>
+                            </div>
+                            <div class="hero-digit-display" id="last-digit-display">--</div>
+                            <div class="feed-meta-subtext" id="feed-subtext">Connecting to Deriv WebSocket...</div>
+
+                            <!-- Probability Level -->
+                            <div class="prob-meter-wrapper">
+                                <div class="prob-meter-header">
+                                    <span id="prob-label" data-i18n="model_confidence">Model Confidence</span>
+                                    <span id="prob-percent">0%</span>
+                                </div>
+                                <div class="prob-meter-bg">
+                                    <div class="prob-meter-fill" id="confidence-level"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculate Button -->
+                    <button id="predict-btn" class="btn-action btn-predict">
+                        <i class="fa-solid fa-microchip"></i> <span data-i18n="calc_signal">Calculate Strategy Signal</span>
+                    </button>
+
+                    <!-- Trade Here Direct Broker Bridge Link -->
+                    <a id="trade-here-link" href="https://app.deriv.com/" target="_blank" rel="noopener" class="btn-trade-link">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> <span data-i18n="open_webtrader">Open Deriv WebTrader</span>
+                    </a>
+                </section>
+
+                <!-- Signal Decision Card -->
+                <section class="card prediction-card" id="prediction-card" style="display: none;">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-bullseye"></i> <span data-i18n="quant_signal">Quantitative Signal</span>
+                        </div>
+                    </div>
+
+                    <div class="prediction-banner">
+                        <div>
+                            <span class="prediction-strategy-name" data-i18n="eval_strategy">Evaluated Strategy</span>
+                            <div style="font-weight:700; margin-top:2px;" id="p-strategy-val">Even / Odd</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="prediction-strategy-name" data-i18n="signal_decision">Signal Decision</span>
+                            <div class="prediction-outcome" id="p-value" aria-live="polite">--</div>
+                        </div>
+                    </div>
+
+                    <div class="analysis-intel-box">
+                        <i class="fa-solid fa-circle-nodes"></i>
+                        <div id="analysis-text" data-i18n="analysis_intel">
+                            Awaiting tick distribution analysis...
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Paper Trading & Auto-Trader Order Pad -->
+                <section class="card paper-order-card" id="paper-order-pad">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-wallet"></i> <span data-i18n="virtual_simulator">Virtual Simulator</span>
+                        </div>
+                        <span class="paper-badge-mode" id="bot-mode-badge"><i class="fa-solid fa-gamepad"></i> Manual</span>
+                    </div>
+
+                    <!-- Mini Account Bar -->
+                    <div class="paper-account-bar">
+                        <div class="paper-acc-details">
+                            <span class="paper-acc-label" data-i18n="sim_balance">Virtual Balance</span>
+                            <div class="paper-acc-balance" id="paper-balance-display">$10,000.00</div>
+                        </div>
+                        <div class="paper-acc-right">
+                            <span class="paper-pnl-pill" id="paper-pnl-pill">+$0.00 (0.0%)</span>
+                            <button class="btn-icon-subtle" id="paper-reset-btn" title="Reset Simulator Balance ($10,000)">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mode Tabs (Manual Trade / Auto-Trader Bot) -->
+                    <div class="paper-tab-nav">
+                        <button class="paper-tab-btn active" id="tab-manual-btn" data-target="manual-pane">
+                            <i class="fa-solid fa-hand-pointer"></i> <span data-i18n="manual_tab">Manual</span>
+                        </button>
+                        <button class="paper-tab-btn" id="tab-bot-btn" data-target="bot-pane">
+                            <i class="fa-solid fa-robot"></i> <span data-i18n="auto_bot_tab">Auto Bot</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab Pane 1: Manual Execution -->
+                    <div class="paper-tab-pane active" id="manual-pane">
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin: 6px 0 10px 0; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border-left: 3px solid var(--primary);">
+                            <i class="fa-solid fa-circle-info" style="color:var(--primary-light)"></i> <span data-i18n="manual_hint">Click EVEN, ODD, or Trade Current Signal below to execute a simulated order.</span>
+                        </div>
+
+                        <!-- Stake Configuration -->
+                        <div class="form-group" style="margin-top: 10px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label for="paper-stake-input" data-i18n="stake_amount">Stake Amount ($)</label>
+                                <span class="paper-sub-info" id="payout-estimate-text">Est. Profit: +$9.50 (95%)</span>
+                            </div>
+                            <div class="stake-input-wrapper">
+                                <span class="currency-prefix">$</span>
+                                <input type="number" id="paper-stake-input" class="custom-input" min="1" max="10000" step="1" value="10">
+                            </div>
+                            <div class="stake-quick-pills">
+                                <button class="btn-stake-pill" data-stake="5">$5</button>
+                                <button class="btn-stake-pill active" data-stake="10">$10</button>
+                                <button class="btn-stake-pill" data-stake="25">$25</button>
+                                <button class="btn-stake-pill" data-stake="50">$50</button>
+                                <button class="btn-stake-pill" data-stake="100">$100</button>
+                            </div>
+                        </div>
+
+                        <!-- Duration in Ticks -->
+                        <div class="form-group">
+                            <label data-i18n="settlement_duration">Settlement Duration</label>
+                            <div class="tick-duration-group" id="paper-duration-group">
+                                <button class="btn-duration-pill active" data-ticks="1">1 Tick</button>
+                                <button class="btn-duration-pill" data-ticks="2">2 Ticks</button>
+                                <button class="btn-duration-pill" data-ticks="3">3 Ticks</button>
+                                <button class="btn-duration-pill" data-ticks="5">5 Ticks</button>
+                            </div>
+                        </div>
+
+                        <!-- Dynamic Action Buttons -->
+                        <div class="paper-actions-grid" id="paper-manual-buttons">
+                            <!-- Populated dynamically based on activeStrategy in app.js -->
+                        </div>
+
+                        <!-- 1-Click Bet Current Strategy Signal -->
+                        <button class="btn-action btn-auto-signal" id="paper-bet-signal-btn">
+                            <i class="fa-solid fa-bolt"></i> <span data-i18n="trade_signal">Trade Current Signal</span> (<span id="signal-btn-label">EVEN</span>)
+                        </button>
+                    </div>
+
+                    <!-- Tab Pane 2: Auto-Trader Bot -->
+                    <div class="paper-tab-pane" id="bot-pane" style="display: none;">
+                        <div class="bot-switch-row">
+                            <div>
+                                <div style="font-weight:600; font-size:0.9rem;" data-i18n="auto_engine">Auto-Trading Engine</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);" id="bot-state-description">Bot is inactive</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="bot-power-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div style="font-size:0.75rem; color:#94a3b8; margin: 10px 0; background: rgba(255,255,255,0.03); padding: 6px 10px; border-radius: 6px; border-left: 3px solid #10b981;">
+                            <i class="fa-solid fa-circle-info" style="color:#34d399"></i> <span data-i18n="bot_hint">Turn toggle ON to enable the autonomous bot. It will place orders whenever signal confidence meets your threshold.</span>
+                        </div>
+
+                        <!-- Bot Parameters -->
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label for="bot-min-confidence" data-i18n="min_confidence">Min Signal Confidence (%)</label>
+                            <div class="range-slider-wrapper">
+                                <input type="range" id="bot-min-confidence" min="50" max="90" step="1" value="55" class="custom-range">
+                                <span class="range-val" id="bot-confidence-val">55%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bot-staking-plan" data-i18n="staking_progression">Staking Progression</label>
+                            <select id="bot-staking-plan" class="custom-select">
+                                <option value="flat" selected>Flat Stake (Constant $10)</option>
+                                <option value="martingale">Martingale (2.0x on Loss)</option>
+                                <option value="dalembert">D'Alembert (+1 unit Loss, -1 Win)</option>
+                            </select>
+                        </div>
+
+                        <div class="bot-limits-grid">
+                            <div class="form-group">
+                                <label for="bot-tp-input" data-i18n="take_profit">Take Profit ($)</label>
+                                <input type="number" id="bot-tp-input" class="custom-input" value="200" min="10" step="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="bot-sl-input" data-i18n="stop_loss">Stop Loss ($)</label>
+                                <input type="number" id="bot-sl-input" class="custom-input" value="100" min="10" step="10">
+                            </div>
+                        </div>
+
+                        <div class="bot-status-terminal" id="bot-status-terminal" aria-live="polite">
+                            <i class="fa-solid fa-terminal"></i> <span>Ready. Turn switch ON to automate trades.</span>
+                        </div>
+                    </div>
+                </section>
+
+            </aside>
+
+            <!-- Main Visuals Column -->
+            <main class="main-column">
+
+                <!-- Real-time Chart Card -->
+                <section class="card">
+                    <div class="chart-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-chart-area"></i>
+                            <span id="chart-asset-name">Volatility 10 (1s)</span>
+                        </div>
+                        <div class="chart-meta-group">
+                            <div class="meta-item">Time: <span id="chart-time">--:--:--</span></div>
+                            <div class="meta-item">Price: <span id="chart-price">--.----</span></div>
+                        </div>
+                    </div>
+
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="tickChart"></canvas>
+                    </div>
+
+                    <!-- Metrics Bar -->
+                    <div class="chart-kpi-grid">
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="highest_quote">Highest Quote</div>
+                            <div class="kpi-value green" id="stat-high">--</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="lowest_quote">Lowest Quote</div>
+                            <div class="kpi-value red" id="stat-low">--</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="current_quote">Current Quote</div>
+                            <div class="kpi-value blue" id="stat-current">--</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="directional_trend">Directional Trend</div>
+                            <div class="kpi-value" id="stat-trend">--</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Virtual Trading Portfolio & Performance Analytics -->
+                <section class="card paper-portfolio-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-chart-pie"></i> <span data-i18n="portfolio_center">Virtual Trading Portfolio & Performance Center</span>
+                        </div>
+                        <div class="header-actions">
+                            <button class="sound-toggle-btn" id="export-trades-btn" style="font-size:0.75rem; padding:4px 10px;">
+                                <i class="fa-solid fa-file-arrow-down"></i> <span data-i18n="export_trades">Export Trades CSV</span>
+                            </button>
+                            <button class="sound-toggle-btn" id="clear-trades-btn" style="font-size:0.75rem; padding:4px 10px;">
+                                <i class="fa-solid fa-trash-can"></i> <span data-i18n="clear_ledger">Clear Ledger</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Performance KPI Grid -->
+                    <div class="chart-kpi-grid paper-kpi-grid">
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="virtual_equity">Virtual Equity</div>
+                            <div class="kpi-value blue" id="paper-stat-equity">$10,000.00</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="net_pnl">Net Profit / Loss</div>
+                            <div class="kpi-value green" id="paper-stat-pnl">+$0.00</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="win_rate">Win Rate</div>
+                            <div class="kpi-value" id="paper-stat-winrate">0.0%</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="total_trades">Total Trades (W / L)</div>
+                            <div class="kpi-value" id="paper-stat-trades">0 (0 / 0)</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="profit_factor">Profit Factor</div>
+                            <div class="kpi-value" id="paper-stat-profitfactor">0.00</div>
+                        </div>
+                        <div class="kpi-tile">
+                            <div class="kpi-label" data-i18n="streak_record">Streak Record</div>
+                            <div class="kpi-value" id="paper-stat-streak">None</div>
+                        </div>
+                    </div>
+
+                    <!-- Active Open Positions Live Monitor -->
+                    <div class="active-positions-container" id="active-positions-container" style="display: none;">
+                        <div class="positions-header">
+                            <span class="pulse-indicator"></span> <strong data-i18n="active_positions">Active Simulated Positions</strong> Awaiting Settlement
+                        </div>
+                        <div class="positions-grid" id="active-positions-list">
+                            <!-- Injected live by app.js -->
+                        </div>
+                    </div>
+
+                    <!-- Performance Equity Curve Chart -->
+                    <div class="equity-chart-section">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">
+                                <i class="fa-solid fa-chart-line"></i> <span data-i18n="equity_curve">Virtual Equity Growth Curve</span>
+                            </span>
+                            <span style="font-size:0.75rem; color:var(--text-dim);" id="equity-points-count">Starting Capital: $10,000.00</span>
+                        </div>
+                        <div class="equity-canvas-wrapper">
+                            <canvas id="equityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Trade History Log Table -->
+                    <div class="trade-history-section">
+                        <div class="history-table-header">
+                            <span style="font-size:0.75rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.04em;">
+                                <i class="fa-solid fa-clock-rotate-left"></i> <span data-i18n="order_ledger">Executed Order Ledger</span>
+                            </span>
+                            <div class="trade-filters">
+                                <button class="btn-filter-sub active" data-filter="all" data-i18n="filter_all">All</button>
+                                <button class="btn-filter-sub" data-filter="won" data-i18n="filter_wins">Wins</button>
+                                <button class="btn-filter-sub" data-filter="lost" data-i18n="filter_losses">Losses</button>
+                            </div>
+                        </div>
+                        <div class="trade-table-wrapper">
+                            <table class="trade-table" id="trade-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Time</th>
+                                        <th>Market</th>
+                                        <th>Contract</th>
+                                        <th>Target</th>
+                                        <th>Entry</th>
+                                        <th>Settlement</th>
+                                        <th>Stake</th>
+                                        <th>PnL</th>
+                                        <th>Balance</th>
+                                        <th>Result</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trade-history-tbody">
+                                    <tr class="empty-row">
+                                        <td colspan="11" data-i18n="empty_ledger">No simulated trades executed yet. Place a manual bet or activate the Auto-Trader Bot!</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Digit Frequency Distribution Matrix -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-braille"></i> <span data-i18n="digit_distribution">Terminal Digit Distribution (0 - 9)</span>
+                        </div>
+                        
+                        <!-- Sample Filter Window (50, 100, 500, 1000) -->
+                        <div class="sample-filter-group">
+                            <button class="btn-filter" data-window="50">50</button>
+                            <button class="btn-filter" data-window="100">100</button>
+                            <button class="btn-filter" data-window="500">500</button>
+                            <button class="btn-filter active" data-window="1000">1000</button>
+                        </div>
+                    </div>
+
+                    <div class="digit-grid" id="digit-grid">
+                        <!-- 0-9 Digit Cards injected dynamically by app.js -->
+                    </div>
+                </section>
+
+                <!-- Markov Chain Digit Transition Matrix -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-arrows-split-up-and-left"></i> <span data-i18n="markov_likelihood">Markov Transition Likelihood (Next Digit Probability)</span>
+                        </div>
+                        <button class="sound-toggle-btn" id="toggle-matrix-btn" style="font-size:0.75rem; padding:4px 8px;">
+                            <i class="fa-solid fa-table-cells"></i> <span id="toggle-matrix-label" data-i18n="view_table">View Table</span>
+                        </button>
+                    </div>
+                    
+                    <div id="transition-summary-text" style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">
+                        Monitoring state transitions between consecutive ticks...
+                    </div>
+
+                    <div class="transition-matrix-wrapper" id="transition-matrix-container" style="display: none;">
+                        <table class="transition-table" id="transition-table">
+                            <!-- Injected by app.js -->
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Analysis Statistics Summary -->
+                <section class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fa-solid fa-database"></i> <span data-i18n="quant_telemetry">Quantitative Telemetry</span>
+                        </div>
+                    </div>
+
+                    <div class="stats-summary-grid">
+                        <div class="summary-stat-box">
+                            <h4 data-i18n="total_processed">Total Processed</h4>
+                            <p id="total-digits-count">0</p>
+                        </div>
+                        <div class="summary-stat-box">
+                            <h4 data-i18n="duration">Duration</h4>
+                            <p id="analysis-duration">Stopped</p>
+                        </div>
+                        <div class="summary-stat-box">
+                            <h4 data-i18n="shannon_entropy">Shannon Entropy</h4>
+                            <p id="entropy-value">0.000</p>
+                        </div>
+                        <div class="summary-stat-box">
+                            <h4 data-i18n="active_buffer">Active Buffer</h4>
+                            <p id="data-points-count">0</p>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            &copy; 2026 Tradingpool Pro Analytics. Fully client-side quantitative research engine with Deriv WebSocket streaming.
+        </footer>
+
+    </div>
+
+    <!-- Quantitative Strategy Backtester Dialog (Feature 2) -->
+    <dialog id="backtest-dialog" class="modern-dialog" aria-labelledby="backtest-dialog-title">
+        <div class="dialog-header">
+            <h2 class="dialog-title" id="backtest-dialog-title">
+                <i class="fa-solid fa-flask-vial"></i> <span data-i18n="backtest_title">Quantitative Strategy Backtester</span>
+            </h2>
+            <button type="button" class="dialog-close-btn" id="close-backtest-btn" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <div class="backtest-layout">
+            <!-- Controls Column -->
+            <div class="backtest-controls-panel">
+                <div class="form-group">
+                    <label for="bt-sample-select" data-i18n="test_sample">Tick Sample Range</label>
+                    <select id="bt-sample-select" class="custom-select">
+                        <option value="100">Last 100 Recorded Ticks</option>
+                        <option value="250">Last 250 Recorded Ticks</option>
+                        <option value="500" selected>Last 500 Recorded Ticks</option>
+                        <option value="1000">Max Buffer (1,000 Ticks)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="bt-strategy-select" data-i18n="stat_strategy">Target Strategy</label>
+                    <select id="bt-strategy-select" class="custom-select">
+                        <option value="even_odd" selected>Even / Odd (Parity Distribution)</option>
+                        <option value="over_under">Over / Under (Barrier Analysis)</option>
+                        <option value="matches">Matches / Cluster Outlier</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="bt-barrier-group" style="display:none;">
+                    <label for="bt-barrier-input" data-i18n="barrier_digit">Barrier Digit (0 - 9)</label>
+                    <input type="number" id="bt-barrier-input" class="custom-input" min="0" max="9" value="5">
+                </div>
+
+                <div class="form-group">
+                    <label for="bt-staking-select" data-i18n="staking_progression">Staking Plan</label>
+                    <select id="bt-staking-select" class="custom-select">
+                        <option value="flat" selected>Flat Stake</option>
+                        <option value="martingale">Martingale (2.0x on Loss)</option>
+                        <option value="dalembert">D'Alembert (+1 unit Loss, -1 Win)</option>
+                    </select>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div class="form-group">
+                        <label for="bt-stake-input" data-i18n="stake_amount">Base Stake ($)</label>
+                        <input type="number" id="bt-stake-input" class="custom-input" min="1" max="1000" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="bt-conf-input" data-i18n="min_confidence">Min Conf (%)</label>
+                        <input type="number" id="bt-conf-input" class="custom-input" min="50" max="95" value="65">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div class="form-group">
+                        <label for="bt-tp-input" data-i18n="take_profit">Take Profit ($)</label>
+                        <input type="number" id="bt-tp-input" class="custom-input" min="10" value="150">
+                    </div>
+                    <div class="form-group">
+                        <label for="bt-sl-input" data-i18n="stop_loss">Stop Loss ($)</label>
+                        <input type="number" id="bt-sl-input" class="custom-input" min="10" value="100">
+                    </div>
+                </div>
+
+                <button type="button" class="btn-action btn-start" id="run-backtest-btn" style="width:100%; margin-top:10px;">
+                    <i class="fa-solid fa-bolt"></i> <span data-i18n="run_backtest">Run Quantitative Simulation</span>
+                </button>
+            </div>
+
+            <!-- Results Column -->
+            <div class="backtest-results-panel">
+                <div class="backtest-kpi-grid">
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Simulated Trades</div>
+                        <div class="kpi-value" id="bt-kpi-trades">0</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Win Rate %</div>
+                        <div class="kpi-value green" id="bt-kpi-winrate">0.0%</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Net Profit / Loss</div>
+                        <div class="kpi-value" id="bt-kpi-pnl">$0.00</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Profit Factor</div>
+                        <div class="kpi-value" id="bt-kpi-pf">0.00</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Max Drawdown</div>
+                        <div class="kpi-value red" id="bt-kpi-mdd">$0.00 (0%)</div>
+                    </div>
+                    <div class="kpi-tile">
+                        <div class="kpi-label">Max Loss Streak</div>
+                        <div class="kpi-value" id="bt-kpi-streak">0</div>
+                    </div>
+                </div>
+
+                <!-- Simulation Equity Curve -->
+                <div class="backtest-canvas-wrapper">
+                    <canvas id="backtestChart"></canvas>
+                </div>
+
+                <!-- Simulated Trade Log Preview -->
+                <div class="backtest-trade-list">
+                    <table class="trade-table" id="bt-trade-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Strategy</th>
+                                <th>Signal</th>
+                                <th>Stake</th>
+                                <th>Exit Digits</th>
+                                <th>Outcome</th>
+                                <th>Sim Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bt-trade-tbody">
+                            <tr class="empty-row"><td colspan="7">Configure parameters and click "Run Simulation" above.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Bot Presets & Session Vault Dialog (Feature 5) -->
+    <dialog id="vault-dialog" class="modern-dialog" aria-labelledby="vault-dialog-title">
+        <div class="dialog-header">
+            <h2 class="dialog-title" id="vault-dialog-title">
+                <i class="fa-solid fa-box-archive"></i> <span data-i18n="vault_title">Bot Presets & Session Vault</span>
+            </h2>
+            <button type="button" class="dialog-close-btn" id="close-vault-btn" aria-label="Close dialog">&times;</button>
+        </div>
+
+        <!-- Section 1: Pre-Engineered Bot Presets -->
+        <div class="vault-section-title">
+            <i class="fa-solid fa-shield-halved"></i> Pre-Engineered Quantitative Bot Profiles
+        </div>
+        <div class="presets-grid" id="system-presets-grid">
+            <!-- Injected via app.js -->
+        </div>
+
+        <!-- Section 2: Custom User Presets -->
+        <div class="vault-section-title">
+            <i class="fa-solid fa-bookmark"></i> Custom Saved Bot Presets
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <input type="text" id="custom-preset-name" class="custom-input" placeholder="Enter preset name (e.g. My Conservative Vol100)" style="flex:1;">
+            <button type="button" class="btn-action btn-start" id="save-current-preset-btn" style="white-space:nowrap;">
+                <i class="fa-solid fa-plus"></i> <span data-i18n="save_preset">Save Current Config</span>
+            </button>
+        </div>
+        <div class="presets-grid" id="custom-presets-grid" style="margin-bottom:24px;">
+            <!-- Injected via app.js -->
+        </div>
+
+        <!-- Section 3: Session Vault Backup & Restore -->
+        <div class="vault-section-title">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Session Vault Backup & Restore
+        </div>
+        <div class="vault-backup-box">
+            <div>
+                <strong style="color:var(--text-main); font-size:0.9rem;">Export or Restore Session Data</strong>
+                <p style="font-size:0.75rem; color:var(--text-dim); margin-top:2px;">Backs up virtual account balance, trade history, recorded ticks, and custom presets into a single JSON file.</p>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button type="button" class="btn-action btn-secondary" id="vault-export-btn">
+                    <i class="fa-solid fa-download"></i> <span data-i18n="export_vault">Export JSON</span>
+                </button>
+                <input type="file" id="vault-import-input" accept=".json" style="display:none;">
+                <button type="button" class="btn-action btn-secondary" id="vault-import-btn">
+                    <i class="fa-solid fa-upload"></i> <span data-i18n="import_vault">Import JSON</span>
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Application Script Module -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
